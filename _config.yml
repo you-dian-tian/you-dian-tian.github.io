@@ -1,0 +1,10 @@
+# Site settings
+title: 余恒洋
+email: you_dian_tian@yeah.net
+description: > # this means to ignore newlines until "baseurl:"
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://yourdomain.com" # the base hostname & protocol for your site
+github_username:  you-dian-tian
+
+# Build settings
+markdown: kramdown
