@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "大神与三位小伙伴"
+title:  "纪念品选择之组合排列"
 date:   2015-04-19 18:22
 categories: Algorithms
 ---
