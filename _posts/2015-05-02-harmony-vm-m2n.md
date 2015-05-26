@@ -5,9 +5,30 @@ date:   2015-05-02 16:49
 categories: Harmony DRLVM
 ---
 
-之前一直困惑`M2nFrame`到底是怎么回事，今天偶然间发现了`M2nFrame`结构体的定义，参考给的代码注释，似乎对这个概念明晰了许多。
+之前一直困惑`M2nFrame`到底是怎么回事，今天偶然间发现了`M2nFrame`结构体的定义，参考给的代码注释，似乎对这个概念明晰了许多。首先要区分三个概念：
 
-Java方法被编译后生成的代码被称为Managed Code，表示是受虚拟机管理的代码；对应的，用C/C++编写的代码生成后被称为Native Code （当然这一说法并不完整，用其它语言编写的代码也可以是Native Code，鉴于这种情况不多见，因此本文默认Native Code就是用C/C++编写的代码）。Managed Code的栈帧结构与Native Code的栈帧结构是不一样的，前者为了支持异常处理和垃圾回收，会保存额外的信息，因此，当一个Java方法调用Native Code时，栈帧要作切换，`M2nFrame`结构就记录了发生切换处的栈结构。在DRLVM中，`M2nFrame`的定义如下：
+- Managed Frame
+- M2nFrame
+- Native Frame
+
+Managed Frame就是Java方法运行时的栈帧，Native Frame可以近似理解为除Java代码以外的函数运行时的栈帧结构（一般是C/C++代码），而M2nFrame就是前两者的“粘合剂”，用于Java方法调用本地代码时栈帧结构的切换，这主要是为了两个目的：
+
+- 能够在发生异常时进行栈回退
+- 垃圾回收
+
+下面主要接合DRLVM中代码来介绍M2nFrame，对Managed Frame将在另外的文章中介绍。
+
+#### Managed Code
+
+Java方法被编译后生成的代码被称为Managed Code，表示是受虚拟机管理的代码。它们一般被放在独立于Java堆的内存中，在程序的运行期间，这部分内存是不会释放的。
+
+#### Native Code
+
+用C/C++编写的代码经编译生成后被称为Native Code （当然这一说法并不完整，用其它语言编写的代码也可以是Native Code，鉴于这种情况不多见，因此本文默认Native Code就是用C/C++编写的代码）。
+
+#### Managed to Native Frame
+
+Managed Code的栈帧结构与Native Code的栈帧结构是不一样的，前者为了支持异常处理和垃圾回收，会保存额外的信息，因此，当一个Java方法调用Native Code时，栈帧要作切换，`M2nFrame`结构就记录了发生切换处的栈结构。在DRLVM中，`M2nFrame`的定义如下：
 
 {% highlight c++ %}
 /* vmcore/src/lil/ia32/m2n_ia32_internal.h */
@@ -27,7 +48,9 @@ struct M2nFrame {
 };
 {% endhighlight %}
 
-举个例子。在DRLVM中，`gc_alloc()`和`gc_alloc_fast()`两个函数作为分配Java对象的接口，`gc_alloc_fast()`声明如下：
+#### 例子
+
+在DRLVM中，`gc_alloc()`和`gc_alloc_fast()`两个函数作为分配Java对象的接口，`gc_alloc_fast()`声明如下：
 
 {% highlight c++ %}
 Managed_Object_handle gc_alloc_fast(unsigned size,
@@ -111,3 +134,4 @@ frame_type m2n_get_frame_type(M2nFrame *);
 
 {% endhighlight %}
 
+最后，每个线程都保存有指向最近的`M2nFrame`结构的指针。
